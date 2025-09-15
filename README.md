@@ -1,3 +1,20 @@
+# To Do
+
+- [X] Creating primitive drawing functions
+- [X] Rendering a cube
+- [X] Backface culling 
+- [X] Camera movement
+- [X] Triangle rasterizer
+- [X] Basic lighting
+- [X] Waveform obj import
+- [ ] Triangle clipping in Z axis
+- [ ] Occlusion culling
+- [ ] Textures
+- [ ] Better waveform .obj handling
+- [ ] Object positioning
+- [ ] Multithreading / Use of SIMD for faster rendering
+- [ ] ...
+
 # Building and running the application (Linux only for now)
 ```bash
 $ git clone https://github.com/OnatBulut/software-renderer.git
@@ -16,3 +33,6 @@ make
 cmake
 ninja
 ```
+\
+\
+Special thanks to my friend [ddenizozgur](https://github.com/ddenizozgur) for his guidance on rendering topics.
