@@ -1,4 +1,3 @@
-EXECUTABLE := soft-renderer
 BUILD_DIR := build
 
 .PHONY: all
