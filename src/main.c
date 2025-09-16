@@ -16,14 +16,20 @@ static World g_world;
 static Light g_light;
 float g_fps = 0.0f;
 
-static void draw_frame(Framebuffer *fb, Mesh *mesh)
+static Object objects[3];
+static int num_objects = 0;
+
+static void draw_frame(Framebuffer *fb)
 {
     framebuffer_clear(fb, color_rgba(60, 150, 240, 255));
 
     graphics_world_update(&g_world);
     graphics_light_update(&g_light, g_world.cam->pos);
 
-    graphics_draw_mesh(fb, &g_world, &g_light, mesh);
+    for (int i = 0; i < num_objects; i++)
+    {
+        graphics_draw_object(fb, &g_world, &g_light, &objects[i]);
+    }
 
     framebuffer_printf(fb, (point2_t) { 2, 2 }, color_rgba(255, 255, 255, 255), "FPS:%.0f\n", g_fps);
     /*
@@ -142,11 +148,22 @@ int main(int argc, char **argv)
     //Mesh cube_mesh = { 0 };
     //cube_mesh.tris = vector_triangle_create(graphics_cube_tris, ARRLEN(graphics_cube_tris));
 
-    Mesh object = wavefront_obj_load_from_file(filepath);
-    printf("Object mesh size: %lu triangles\n", (unsigned long)vector_triangle_size(&object.tris));
+    Mesh loaded_mesh = wavefront_obj_load_from_file(filepath);
+    printf("Object mesh size: %lu triangles\n", (unsigned long)vector_triangle_size(&loaded_mesh.tris));
+
+    graphics_object_init(&objects[0], loaded_mesh);
+    graphics_object_set_position(&objects[0], (vec3) { -3.0f, 0.0f, 0.0f });
+
+    graphics_object_init(&objects[1], loaded_mesh);
+    graphics_object_set_position(&objects[1], (vec3) { 0.0f, 0.0f, 0.0f });
+
+    graphics_object_init(&objects[2], loaded_mesh);
+    graphics_object_set_position(&objects[2], (vec3) { 3.0f, 0.0f, 0.0f });
+
+    num_objects = 3;
 
     Camera cam = { 0 };
-    vec3 start_pos = { 0.5f, 0.5f, 5.0f };
+    vec3 start_pos = { 0.0f, 0.0f, 5.0f };
     vec3 start_att = { 0.0f };
     camera_init(&cam, start_pos, start_att);
 
@@ -216,7 +233,14 @@ int main(int argc, char **argv)
 #endif
         }
 
-        draw_frame(framebuffer, &object);
+        static float time = 0.0f;
+        time += dt;
+
+        graphics_object_set_rotation(&objects[0], (vec3) { 0.0f, time * 0.5f, 0.0f });
+        graphics_object_set_rotation(&objects[1], (vec3) { time * 0.3f, time * 0.7f, 0.0f });
+        graphics_object_set_rotation(&objects[2], (vec3) { 0.0f, time * -0.4f, time * 0.2f });
+
+        draw_frame(framebuffer);
 
 #if USE_TEXTURE_RENDERER
         void *pixels;
@@ -237,7 +261,7 @@ int main(int argc, char **argv)
 #endif
     }
 
-    vector_triangle_destroy(&object.tris);
+    vector_triangle_destroy(&loaded_mesh.tris);
     framebuffer_destroy(framebuffer);
 #if USE_TEXTURE_RENDERER
     SDL_DestroyTexture(texture);

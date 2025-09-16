@@ -28,18 +28,26 @@ typedef struct
 
 typedef struct
 {
-    mat4 world;
+    Mesh mesh;
+    vec3 pos;           // position: x, y, z
+    vec3 rot;           // rotation: roll, pitch, yaw
+    vec3 scale;
+    mat4 model;         // transformed object
+    mat3 normal_mat;    // normal transformation matrix
+    bool dirty;
+} Object;
+
+typedef struct
+{
     mat4 proj;
-    mat4 WV;
-    mat4 WVP;
+    mat4 view;
     vec3 ambient_light_color;
     Camera *cam;
 } World;
 
 typedef struct
 {
-    vec3 source_pos;
-    vec3 dir_norm;
+    vec3 pos;
     vec3 color;
 } Light;
 
@@ -164,7 +172,6 @@ static inline void graphics_set_projection(const Framebuffer *fb, float fNear, f
 
 static inline void graphics_world_init(Framebuffer *fb, World *world, Camera *cam, vec3 ambient_light_color)
 {
-    glm_mat4_identity(world->world);
     graphics_set_projection(fb, 0.1f, 1000.0f, 60.0f, world->proj);
     world->cam = cam;
     glm_vec3_copy(ambient_light_color, world->ambient_light_color);
@@ -173,8 +180,7 @@ static inline void graphics_world_init(Framebuffer *fb, World *world, Camera *ca
 static inline void graphics_world_update(World *world)
 {
     camera_update_view(world->cam);
-    glm_mat4_mul(world->cam->view, world->world, world->WV);
-    glm_mat4_mul(world->proj, world->WV, world->WVP);
+    glm_mat4_copy(world->cam->view, world->view);
 }
 
 static inline void graphics_light_init(Light *light, uint8_t r, uint8_t g, uint8_t b)
@@ -186,16 +192,97 @@ static inline void graphics_light_init(Light *light, uint8_t r, uint8_t g, uint8
 
 static inline void graphics_light_update(Light* light, vec3 pos)
 {
-    glm_vec3_normalize_to(pos, light->dir_norm);
+    glm_vec3_copy(pos, light->pos);
 }
 
-static inline void graphics_calculate_color(World *world, Light *light, vec4 normal_obj, vec3 color_out)
+static inline void graphics_object_init(Object *obj, Mesh mesh)
 {
-    vec4 normal_ws;
-    glm_mat4_mulv(world->world, normal_obj, normal_ws);
+    obj->mesh = mesh;
+    glm_vec3_zero(obj->pos);
+    glm_vec3_zero(obj->rot);
+    glm_vec3_one(obj->scale);
+    glm_mat4_identity(obj->model);
+    glm_mat3_identity(obj->normal_mat);
+    obj->dirty = false;
+}
+
+static inline void graphics_object_set_position(Object *obj, vec3 pos)
+{
+    glm_vec3_copy(pos, obj->pos);
+    obj->dirty = true;
+}
+
+static inline void graphics_object_set_rotation(Object *obj, vec3 rot)
+{
+    glm_vec3_copy(rot, obj->rot);
+    obj->dirty = true;
+}
+
+static inline void graphics_object_set_scale(Object *obj, vec3 scale)
+{
+    glm_vec3_copy(scale, obj->scale);
+    obj->dirty = true;
+}
+
+static inline void graphics_object_translate(Object *obj, vec3 delta)
+{
+    glm_vec3_add(obj->pos, delta, obj->pos);
+    obj->dirty = true;
+}
+
+static inline void graphics_object_rotate(Object *obj, vec3 delta)
+{
+    glm_vec3_add(obj->rot, delta, obj->rot);
+    obj->dirty = true;
+}
+
+static inline void graphics_object_update(Object *obj)
+{
+    if (!obj->dirty) return;
+
+    mat4 translation, rot_x, rot_y, rot_z, rot, scale_mat;
+
+    glm_mat4_identity(translation);
+    glm_translate(translation, obj->pos);
+
+    glm_mat4_identity(rot_x);
+    glm_rotate_x(rot_x, obj->rot[0], rot_x);
+
+    glm_mat4_identity(rot_y);
+    glm_rotate_y(rot_y, obj->rot[1], rot_y);
+
+    glm_mat4_identity(rot_z);
+    glm_rotate_z(rot_z, obj->rot[2], rot_z);
+
+    glm_mat4_mul(rot_z, rot_y, rot);
+    glm_mat4_mul(rot, rot_x, rot);
+
+    glm_mat4_identity(scale_mat);
+    glm_scale(scale_mat, obj->scale);
+
+    mat4 temp;
+    glm_mat4_mul(rot, scale_mat, temp);
+    glm_mat4_mul(translation, temp, obj->model);
+
+    mat3 model3x3;
+    glm_mat4_pick3(obj->model, model3x3);
+    glm_mat3_inv(model3x3, obj->normal_mat);
+    glm_mat3_transpose(obj->normal_mat);
+
+    obj->dirty = false;
+}
+
+static inline void graphics_calculate_color(World *world, Light *light, mat3 normal_matrix, vec4 normal_obj, vec3 vertex_world_pos, vec3 color_out)
+{
+    vec3 normal_ws;
+    glm_mat3_mulv(normal_matrix, normal_obj, normal_ws);
     glm_vec3_normalize(normal_ws);
 
-    float ndotl = glm_vec3_dot(normal_obj, light->dir_norm);
+    vec3 light_dir;
+    glm_vec3_sub(light->pos, vertex_world_pos, light_dir);
+    glm_vec3_normalize(light_dir);
+
+    float ndotl = glm_vec3_dot(normal_ws, light_dir);
     ndotl = fmaxf(ndotl, 0.0f);
 
     vec3 diffuse, ambient;
@@ -206,26 +293,33 @@ static inline void graphics_calculate_color(World *world, Light *light, vec4 nor
         color_out[k] = fminf(fmaxf(color_out[k], 0.0f), 1.0f);
 }
 
-void graphics_draw_mesh(Framebuffer *fb, World *world, Light *light, Mesh *mesh)
+void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *obj)
 {
-    const size_t triangle_count = vector_triangle_size(&mesh->tris);
+    graphics_object_update(obj);
+
+    mat4 view_model, mvp;
+    glm_mat4_mul(world->view, obj->model, view_model);
+    glm_mat4_mul(world->proj, view_model, mvp);
+
+    const size_t triangle_count = vector_triangle_size(&obj->mesh.tris);
     for (size_t i = 0; i < triangle_count; ++i)
     {
-        Triangle *tri = vector_triangle_at(&mesh->tris, i);
+        Triangle *tri = vector_triangle_at(&obj->mesh.tris, i);
         Triangle tri_clip, tri_screen;
 
         for (int v = 0; v < 3; ++v)
         {
-            vec4 world_pos = { tri->v[v].p[0], tri->v[v].p[1], tri->v[v].p[2], 1.0f };
-            graphics_multiply_matrix_vector(world->WVP, world_pos, tri_clip.v[v].p);
+            vec4 vertex_obj = { tri->v[v].p[0], tri->v[v].p[1], tri->v[v].p[2], 1.0f };
+            vec3 vertex_world;
+            graphics_multiply_matrix_vector(obj->model, vertex_obj, vertex_world);
 
-            vec4 normal_obj = { tri->v[v].n[0], tri->v[v].n[1], tri->v[v].n[2], 1.0f };
-            graphics_calculate_color(world, light, normal_obj, tri->v[v].c);
+            graphics_multiply_matrix_vector(mvp, vertex_obj, tri_clip.v[v].p);
 
-            float x = (tri_clip.v[v].p[0] + 1.0f) * 0.5f * (float)(fb->width - 1);
-            float y = (tri_clip.v[v].p[1] - 1.0f) * -0.5f * (float)(fb->height - 1);
-            tri_screen.v[v].p[0] = x;
-            tri_screen.v[v].p[1] = y;
+            vec4 normal_obj = { tri->v[v].n[0], tri->v[v].n[1], tri->v[v].n[2], 0.0f };
+            graphics_calculate_color(world, light, obj->normal_mat, normal_obj, vertex_world, tri->v[v].c);
+
+            tri_screen.v[v].p[0] = (tri_clip.v[v].p[0] + 1.0f) * 0.5f * (float)(fb->width - 1);
+            tri_screen.v[v].p[1] = (tri_clip.v[v].p[1] - 1.0f) * -0.5f * (float)(fb->height - 1);
         }
 
         float dx1 = tri_screen.v[1].p[0] - tri_screen.v[0].p[0];
@@ -245,5 +339,6 @@ void graphics_draw_mesh(Framebuffer *fb, World *world, Light *light, Mesh *mesh)
         framebuffer_fill_triangle(fb, p1, p2, p3, c0, c1, c2);
     }
 }
+
 
 #endif //__GRAPHICS_H__
