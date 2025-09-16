@@ -131,6 +131,13 @@ static inline void graphics_point2(const vec2 src, point2_t *dest)
     dest->y = src[1];
 }
 
+static inline void graphics_point3(const vec3 src, point3_t *dest)
+{
+    dest->x = src[0];
+    dest->y = src[1];
+    dest->z = src[2];
+}
+
 static inline void vec3_pow(const vec3 src, float exp, vec3 dst)
 {
     dst[0] = powf(src[0], exp);
@@ -320,23 +327,29 @@ void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *o
 
             tri_screen.v[v].p[0] = (tri_clip.v[v].p[0] + 1.0f) * 0.5f * (float)(fb->width - 1);
             tri_screen.v[v].p[1] = (tri_clip.v[v].p[1] - 1.0f) * -0.5f * (float)(fb->height - 1);
+            tri_screen.v[v].p[2] = tri_clip.v[v].p[2];
         }
 
+        // continue if triangle is behind the camera
+        if (tri_screen.v[0].p[2] > 1 || tri_screen.v[1].p[2] > 1 || tri_screen.v[2].p[2] > 1) continue;
+
+        // continue if the triangle is facing backwards
         float dx1 = tri_screen.v[1].p[0] - tri_screen.v[0].p[0];
         float dy1 = tri_screen.v[1].p[1] - tri_screen.v[0].p[1];
         float dx2 = tri_screen.v[2].p[0] - tri_screen.v[0].p[0];
         float dy2 = tri_screen.v[2].p[1] - tri_screen.v[0].p[1];
         if (dx1 * dy2 - dy1 * dx2 > 0.0f) continue;
 
-        point2_t p1, p2, p3;
-        graphics_point2(tri_screen.v[0].p, &p1);
-        graphics_point2(tri_screen.v[1].p, &p2);
-        graphics_point2(tri_screen.v[2].p, &p3);
+        point3_t p0, p1, p2;
+        graphics_point3(tri_screen.v[0].p, &p0);
+        graphics_point3(tri_screen.v[1].p, &p1);
+        graphics_point3(tri_screen.v[2].p, &p2);
 
         pixel_t c0 = graphics_color_rgba_from_linear(tri->v[0].c);
         pixel_t c1 = graphics_color_rgba_from_linear(tri->v[1].c);
         pixel_t c2 = graphics_color_rgba_from_linear(tri->v[2].c);
-        framebuffer_fill_triangle(fb, p1, p2, p3, c0, c1, c2);
+
+        framebuffer_fill_triangle_with_depth(fb, p0, p1, p2, c0, c1, c2);
     }
 }
 
