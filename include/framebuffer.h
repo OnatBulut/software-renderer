@@ -423,7 +423,7 @@ static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_
 
                 float z = lambda0 * p0.z + lambda1 * p1.z + lambda2 * p2.z;
 
-                if (z < *depth_row)
+                if (z < *depth_row - 1e-5f)
                 {
                     *depth_row = z;
 
