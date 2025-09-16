@@ -22,6 +22,7 @@ static int num_objects = 0;
 static void draw_frame(Framebuffer *fb)
 {
     framebuffer_clear(fb, color_rgba(60, 150, 240, 255));
+    framebuffer_clear_depth(fb, FLT_MAX);
 
     graphics_world_update(&g_world);
     graphics_light_update(&g_light, g_world.cam->pos);
