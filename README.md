@@ -2,16 +2,16 @@
 
 - [X] Creating primitive drawing functions
 - [X] Rendering a cube
-- [X] Backface culling 
+- [X] Backface culling
 - [X] Camera movement
 - [X] Triangle rasterizer
 - [X] Basic lighting
 - [X] Waveform obj import
 - [ ] Triangle clipping in Z axis
-- [ ] Occlusion culling
+- [ ] Depth Buffer
 - [ ] Textures
 - [ ] Better waveform .obj handling
-- [ ] Object positioning
+- [X] Object positioning and transformation
 - [ ] Multithreading / Use of SIMD for faster rendering
 - [ ] ...
 
