@@ -7,8 +7,8 @@
 - [X] Triangle rasterizer
 - [X] Basic lighting
 - [X] Waveform obj import
-- [ ] Triangle clipping in Z axis
-- [ ] Depth Buffer
+- [X] Triangle clipping in Z axis
+- [X] Depth Buffer
 - [ ] Textures
 - [ ] Better waveform .obj handling
 - [X] Object positioning and transformation
