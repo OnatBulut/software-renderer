@@ -6,11 +6,11 @@
 - [X] Camera movement
 - [X] Triangle rasterizer
 - [X] Basic lighting
-- [X] Waveform obj import
+- [X] Wavefront obj import
 - [X] Triangle clipping in Z axis
-- [X] Depth Buffer
+- [X] Depth buffer
 - [ ] Textures
-- [ ] Better waveform .obj handling
+- [ ] Better wavefront obj handling
 - [X] Object positioning and transformation
 - [ ] Multithreading / Use of SIMD for faster rendering
 - [ ] ...
