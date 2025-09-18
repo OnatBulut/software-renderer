@@ -136,10 +136,7 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
             }
 
             if (skipped > 0)
-            {
                 printf("Skipped %u faces.\n", skipped);
-                break;
-            }
         }
     }
 
