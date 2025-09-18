@@ -10,7 +10,7 @@
 - [X] Triangle clipping in Z axis
 - [X] Depth buffer
 - [ ] Textures
-- [ ] Better wavefront obj handling
+- [X] Better wavefront obj handling
 - [X] Object positioning and transformation
 - [ ] Multithreading / Use of SIMD for faster rendering
 - [ ] ...
@@ -20,7 +20,7 @@
 $ git clone https://github.com/OnatBulut/software-renderer.git
 $ cd software-renderer
 $ make
-$ build/software-renderer tes.obj
+$ build/software-renderer resources/test.obj
 ```
 
 ## Dependencies

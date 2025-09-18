@@ -11,7 +11,7 @@
 
 CREATE_VECTOR_TYPE(Vertex, vertex);
 
-Mesh wavefront_obj_load_from_file(const char *filename)
+Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v_per_face)
 {
     Mesh mesh = { .tris = vector_triangle_create(NULL, 0) };
     vector_triangle_reserve(&mesh.tris, 0x200);
@@ -64,131 +64,81 @@ Mesh wavefront_obj_load_from_file(const char *filename)
         }
         else if (line[0] == 'f')
         {
-            ivec3 pos, norm, tex;
-            ivec4 pos4, norm4, tex4;
-            if (sscanf(line, "f %u %u %u %u", &pos4[0], &pos4[1], &pos4[2], &pos4[3]) == 4)
+            enum { POS = 1, TEX = 2, NORM = 4 } v_type = 0;
+            unsigned int v_cnt = 0, skipped = 0;
+            unsigned int p_in, p_val[max_v_per_face],
+                         n_in, n_val[max_v_per_face],
+                         t_in, t_val[max_v_per_face];
+
+            char *t_line = strtok(line, " \t");
+            while (t_line)
             {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[3] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
+                if (sscanf(t_line, "%u/%u/%u", &p_in, &t_in, &n_in) == 3)
+                {
+                    p_val[v_cnt] = p_in;
+                    t_val[v_cnt] = t_in;
+                    n_val[v_cnt] = n_in;
+                    v_cnt++;
+                    v_type = POS | TEX | NORM;
+                }
+                else if (sscanf(t_line, "%u//%u", &p_in, &n_in) == 2)
+                {
+                    p_val[v_cnt] = p_in;
+                    n_val[v_cnt] = n_in;
+                    v_cnt++;
+                    v_type = POS | NORM;
+                }
+                else if (sscanf(t_line, "%u/%u", &p_in, &t_in) == 2)
+                {
+                    p_val[v_cnt] = p_in;
+                    t_val[v_cnt] = t_in;
+                    v_cnt++;
+                    v_type = POS | TEX;
+                }
+                else if (sscanf(t_line, "%u", &p_in) == 1)
+                {
+                    p_val[v_cnt++] = p_in;
+                    v_type = POS;
+                }
+                else if (strcmp(t_line, "f") != 0)
+                {
+                    fprintf(stderr, "Unrecognized face format!\n");
+                    skipped++;
+                    break;
+                }
+
+                if (v_cnt >= max_v_per_face)
+                {
+                    printf("Face with %u or more vertices detected, consider increasing the limit.\n", max_v_per_face);
+                    break;
+                }
+
+                t_line = strtok(NULL, " \t");
             }
-            else if (sscanf(line, "f %u/%u %u/%u %u/%u %u/%u",
-                        &pos4[0], &tex4[0],
-                        &pos4[1], &tex4[1],
-                        &pos4[2], &tex4[2],
-                        &pos4[3], &tex4[3]) == 8)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[3] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u//%u %u//%u %u//%u %u//%u",
-                        &pos4[0], &norm4[0],
-                        &pos4[1], &norm4[1],
-                        &pos4[2], &norm4[2],
-                        &pos4[3], &norm4[3]) == 8)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[1] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[2] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[3] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[2] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[3] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u/%u/%u %u/%u/%u %u/%u/%u %u/%u/%u",
-                        &pos4[0], &tex4[0], &norm4[0],
-                        &pos4[1], &tex4[1], &norm4[1],
-                        &pos4[2], &tex4[2], &norm4[2],
-                        &pos4[3], &tex4[3], &norm4[3]) == 12)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[1] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[2] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[3] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[2] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm4[3] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u %u %u", &pos[0], &pos[1], &pos[2]) == 3)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[2] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u/%u %u/%u %u/%u",
-                        &pos4[0], &tex4[0],
-                        &pos4[1], &tex4[1],
-                        &pos4[2], &tex4[2]) == 6)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos4[2] - 1)->p ,tri.v[2].p);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u//%u %u//%u %u//%u",
-                        &pos[0], &norm[0],
-                        &pos[1], &norm[1],
-                        &pos[2], &norm[2]) == 6)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[2] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[1] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[2] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else if (sscanf(line, "f %u/%u/%u %u/%u/%u %u/%u/%u",
-                        &pos[0], &tex[0], &norm[0],
-                        &pos[1], &tex[1], &norm[1],
-                        &pos[2], &tex[2], &norm[2]) == 9)
-            {
-                Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, pos[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[1] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, pos[2] - 1)->p ,tri.v[2].p);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[0] - 1)->n ,tri.v[0].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[1] - 1)->n ,tri.v[1].n);
-                glm_vec3_copy(vector_vertex_at(&normals, norm[2] - 1)->n ,tri.v[2].n);
-                vector_triangle_push_back(&mesh.tris, tri);
-            }
-            else
-            {
-                fprintf(stderr, "Unrecognized format!\n");
+
+            if (!(v_type & POS))
                 return (Mesh) { 0 };
+
+            while (v_cnt > 2)
+            {
+                Triangle tri = { 0 };
+                glm_vec3_copy(vector_vertex_at(&positions, p_val[0] - 1)->p ,tri.v[0].p);
+                glm_vec3_copy(vector_vertex_at(&positions, p_val[v_cnt - 2] - 1)->p ,tri.v[1].p);
+                glm_vec3_copy(vector_vertex_at(&positions, p_val[v_cnt - 1] - 1)->p ,tri.v[2].p);
+                if (v_type & NORM)
+                {
+                    glm_vec3_copy(vector_vertex_at(&normals, n_val[0] - 1)->n ,tri.v[0].n);
+                    glm_vec3_copy(vector_vertex_at(&normals, n_val[v_cnt - 2] - 1)->n ,tri.v[1].n);
+                    glm_vec3_copy(vector_vertex_at(&normals, n_val[v_cnt - 1] - 1)->n ,tri.v[2].n);
+                }
+                vector_triangle_push_back(&mesh.tris, tri);
+                v_cnt--;
+            }
+
+            if (skipped > 0)
+            {
+                printf("Skipped %u faces.\n", skipped);
+                break;
             }
         }
     }
