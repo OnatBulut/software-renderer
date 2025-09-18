@@ -83,7 +83,8 @@ void keyboard_movement(World *world, float dt)
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
+    if (argc < 2)
+    {
         fprintf(stderr, "Usage: %s <path>\n", argv[0]);
         return 1;
     }
@@ -149,7 +150,7 @@ int main(int argc, char **argv)
     //Mesh cube_mesh = { 0 };
     //cube_mesh.tris = vector_triangle_create(graphics_cube_tris, ARRLEN(graphics_cube_tris));
 
-    Mesh loaded_mesh = wavefront_obj_load_from_file(filepath);
+    Mesh loaded_mesh = wavefront_obj_load_from_file(filepath, 32);
     printf("Object mesh size: %lu triangles\n", (unsigned long)vector_triangle_size(&loaded_mesh.tris));
 
     graphics_object_init(&objects[0], loaded_mesh);
