@@ -1,3 +1,7 @@
+<p align="center">
+   <img alt="" src="window.png" />
+</p>
+
 # To Do
 
 - [X] Creating primitive drawing functions
