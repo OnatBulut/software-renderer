@@ -11,12 +11,18 @@
 - [X] Triangle rasterizer
 - [X] Basic lighting
 - [X] Wavefront obj import
-- [X] Triangle clipping in Z axis
+- [X] *Very basic* triangle clipping on Z axis
 - [X] Depth buffer
-- [ ] Textures
 - [X] Better wavefront obj handling
 - [X] Object positioning and transformation
-- [ ] Multithreading / Use of SIMD for faster rendering
+- [ ] Material properties for objects
+- [ ] Material template library (.mtl) support
+- [ ] Flat shading rasterizer (for better performance on objects that don't need smooth shading)
+- [ ] Phong shading rasterizer (to test how it looks and performs in comparison to current Gouraud implementation)
+- [ ] Image import for textures
+- [ ] Rasterizer for textured triangles
+- [ ] Proper clipping implementation
+- [ ] Multithreading / Use of SIMD for faster rendering (maybe)
 - [ ] ...
 
 # Building and running the application (Linux only for now)
@@ -28,7 +34,7 @@ $ build/software-renderer resources/test.obj
 ```
 
 ## Dependencies
-[SDL3](https://github.com/libsdl-org/SDL) - needs to be manually installed on your system for now\
+[SDL3](https://github.com/libsdl-org/SDL) - needs to be manually installed on your system\
 [cglm](https://github.com/recp/cglm) - cloned from source automatically upon build
 
 ## Build dependencies:
