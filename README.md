@@ -25,13 +25,15 @@
 - [ ] Multithreading / Use of SIMD for faster rendering (maybe)
 - [ ] ...
 
-# Building and running the application (Linux only for now)
+# Building and running the application on Linux
 ```bash
 $ git clone https://github.com/OnatBulut/software-renderer.git
 $ cd software-renderer
 $ make
 $ build/software-renderer resources/test.obj
 ```
+\
+Note: May compile on Windows but untested. Needs to be done manually. Will test it soon.
 
 ## Dependencies
 [SDL3](https://github.com/libsdl-org/SDL) - needs to be manually installed on your system\
