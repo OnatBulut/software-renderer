@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(software-renderer)
-add_compile_options(-Wall -Wextra -O3)
+add_compile_options(-Wall -Wextra $<$<CONFIG:Release>:-O3>)
 
 find_package(SDL3 REQUIRED)
 

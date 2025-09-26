@@ -1,6 +1,5 @@
 # Blender 4.5.2 LTS
 # www.blender.org
-mtllib tes.mtl
 o Torus
 v 1.250000 0.000000 0.000000
 v 1.191511 0.160697 0.000000

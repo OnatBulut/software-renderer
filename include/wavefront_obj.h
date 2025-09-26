@@ -1,12 +1,10 @@
 #ifndef __WAVEFRONT_OBJ_H__
 #define __WAVEFRONT_OBJ_H__
 
-#include <cglm/cglm.h>
-#include <stdio.h>
-#include <string.h>
 
-#include "vec.h"
-#include "graphics.h"
+#include <stdbool.h>
+
+#include "common.h"
 
 
 CREATE_VECTOR_TYPE(Vertex, vertex);
@@ -27,10 +25,14 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
     vector_vertex positions = vector_vertex_create(NULL, 0);
     vector_vertex_reserve(&positions, 0x200);
 
+    vector_vertex texcoords = vector_vertex_create(NULL, 0);
+    vector_vertex_reserve(&texcoords, 0x200);
+
     vector_vertex normals = vector_vertex_create(NULL, 0);
     vector_vertex_reserve(&normals, 0x200);
 
     unsigned int skipped = 0, line_idx = 0;
+    bool _smooth = false;
 
     char line[512];
     while (fgets(line, sizeof(line), file))
@@ -38,20 +40,48 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
         ++line_idx;
         if (line[0] == 'v')
         {
-            if(line[1] == ' ')
+            if(line[1] == ' ')  // List of geometric vertices, with (x, y, z, [w]) coordinates, w is optional and defaults to 1.0.
             {
                 Vertex v;
-                if (sscanf(line, "v %f %f %f", &v.p[0], &v.p[1], &v.p[2]) == 3)
+                if (sscanf(line, "v %f %f %f %f", &v.p[0], &v.p[1], &v.p[2], &v.p[3]) == 4)
                 {
+                    vector_vertex_push_back(&positions, v);
+                }
+                else if (sscanf(line, "v %f %f %f", &v.p[0], &v.p[1], &v.p[2]) == 3)
+                {
+                    v.p[3] = 1.0f;
                     vector_vertex_push_back(&positions, v);
                 }
                 else
                 {
-                    fprintf(stderr, "Unrecognized format!\n");
+                    fprintf(stderr, "Unrecognized vertex format!\n");
                     return (Mesh) { 0 };
                 }
             }
-            else if (line[1] == 'n')
+            else if (line[1] == 't') // List of texture coordinates, in (u, [v, w]) coordinates, these will vary between 0 and 1. v, w are optional and default to 0.
+            {
+                Vertex v;
+                if (sscanf(line, "vt %f %f %f", &v.t[0], &v.t[1], &v.t[2]) == 3)
+                {
+                    vector_vertex_push_back(&texcoords, v);
+                }
+                else if (sscanf(line, "vt %f %f", &v.t[0], &v.t[1]) == 2)
+                {
+                    v.t[2] = 0.0f;
+                    vector_vertex_push_back(&texcoords, v);
+                }
+                else if (sscanf(line, "vt %f", &v.t[0]) == 1)
+                {
+                    v.t[1] = v.t[2] = 0.0f;
+                    vector_vertex_push_back(&normals, v);
+                }
+                else
+                {
+                    fprintf(stderr, "Unrecognized texture coordinate format!\n");
+                    return (Mesh) { 0 };
+                }
+            }
+            else if (line[1] == 'n') // List of vertex normals in (i, j, k) form; normals might not be unit vectors.
             {
                 Vertex v;
                 if (sscanf(line, "vn %f %f %f", &v.n[0], &v.n[1], &v.n[2]) == 3)
@@ -60,9 +90,26 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
                 }
                 else
                 {
-                    fprintf(stderr, "Unrecognized format!\n");
+                    fprintf(stderr, "Unrecognized vertex normal format!\n");
                     return (Mesh) { 0 };
                 }
+            }
+        }
+        else if (line[0] == 's')
+        {
+            int t = 0;
+            if (strcmp(line, "s off\n") == 0)
+            {
+                _smooth = false;
+            }
+            else if (sscanf(line, "s %d", &t) == 1)
+            {
+                _smooth = t;
+            }
+            else
+            {
+                fprintf(stderr, "Unrecognized smoothing group format!\n");
+                return (Mesh) { 0 };
             }
         }
         else if (line[0] == 'f')
@@ -126,12 +173,16 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
             while (v_cnt > 2)
             {
                 Triangle tri = { 0 };
-                glm_vec3_copy(vector_vertex_at(&positions, p_val[0] - 1)->p ,tri.v[0].p);
-                glm_vec3_copy(vector_vertex_at(&positions, p_val[v_cnt - 2] - 1)->p ,tri.v[1].p);
-                glm_vec3_copy(vector_vertex_at(&positions, p_val[v_cnt - 1] - 1)->p ,tri.v[2].p);
+                tri.smooth = _smooth;
+
+                glm_vec4_copy(vector_vertex_at(&positions, p_val[0] - 1)->p ,tri.v[0].p);
+                glm_vec4_copy(vector_vertex_at(&positions, p_val[v_cnt - 2] - 1)->p ,tri.v[1].p);
+                glm_vec4_copy(vector_vertex_at(&positions, p_val[v_cnt - 1] - 1)->p ,tri.v[2].p);
                 if (v_type & TEX)
                 {
-                    (void)t_val; // Will be added after textures are implemented
+                    glm_vec3_copy(vector_vertex_at(&texcoords, t_val[0] - 1)->t ,tri.v[0].t);
+                    glm_vec3_copy(vector_vertex_at(&texcoords, t_val[v_cnt - 2] - 1)->t ,tri.v[1].t);
+                    glm_vec3_copy(vector_vertex_at(&texcoords, t_val[v_cnt - 1] - 1)->t ,tri.v[2].t);
                 }
                 if (v_type & NORM)
                 {
@@ -153,5 +204,6 @@ Mesh wavefront_obj_load_from_file(const char *filename, const unsigned int max_v
     fclose(file);
     return mesh;
 }
+
 
 #endif //__WAVEFRONT_OBJ_H__

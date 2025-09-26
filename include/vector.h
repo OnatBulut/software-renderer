@@ -1,8 +1,8 @@
-#ifndef __VEC_H_
-#define __VEC_H_
+#ifndef __VECTOR_H_
+#define __VECTOR_H_
 
 #include <stdbool.h>
-#include <stdlib.h>
+#include <string.h>
 
 
 #define CREATE_VECTOR_TYPE(TYPE, NAME)                                          \
@@ -106,4 +106,5 @@
         return true;                                                            \
     }                                                                           \
 
-#endif //__VEC_H_
+
+#endif //__VECTOR_H_
