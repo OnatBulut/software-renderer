@@ -1,30 +1,10 @@
 #ifndef __GRAPHICS_H__
 #define __GRAPHICS_H__
 
-#include <cglm/cglm.h>
-
+#include "common.h"
 #include "camera.h"
 #include "framebuffer.h"
-#include "vec.h"
 
-
-typedef struct
-{
-    vec3 p;
-    vec3 n;
-    vec3 c;
-} Vertex;
-
-typedef struct
-{
-    Vertex v[3];
-} Triangle;
-
-CREATE_VECTOR_TYPE(Triangle, triangle)
-typedef struct
-{
-    vector_triangle tris;
-} Mesh;
 
 typedef struct
 {
@@ -53,75 +33,75 @@ typedef struct
 
 static Triangle __attribute__((unused)) graphics_cube_tris[] = {
     // SOUTH  (‑Z)
-    { .v = {
-        { .p = { 0.0f, 0.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } },
-        { .p = { 0.0f, 1.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } },
-        { .p = { 1.0f, 1.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } },
+        { .p = { 0.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } },
+        { .p = { 1.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } }
     }},
-    { .v = {
-        { .p = { 0.0f, 0.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } },
-        { .p = { 1.0f, 1.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } },
-        { .p = { 1.0f, 0.0f, 0.0f }, .n = { 0.0f, 0.0f, -1.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } },
+        { .p = { 1.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } },
+        { .p = { 1.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, -1.0f } }
     }},
 
     // EAST  (+X)
-    { .v = {
-        { .p = { 1.0f, 0.0f, 0.0f }, .n = { 1.0f, 0.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 0.0f }, .n = { 1.0f, 0.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 0.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 0.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 1.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } }
     }},
-    { .v = {
-        { .p = { 1.0f, 0.0f, 0.0f }, .n = { 1.0f, 0.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } },
-        { .p = { 1.0f, 0.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 0.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 1.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } },
+        { .p = { 1.0f, 0.0f, 1.0f, 1.0f }, .n = { 1.0f, 0.0f, 0.0f } }
     }},
 
     // NORTH (+Z)
-    { .v = {
-        { .p = { 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
-        { .p = { 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
-        { .p = { 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
+        { .p = { 1.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
+        { .p = { 0.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } }
     }},
-    { .v = {
-        { .p = { 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
-        { .p = { 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
-        { .p = { 0.0f, 0.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
+        { .p = { 0.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } },
+        { .p = { 0.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 0.0f, 1.0f } }
     }},
 
     // WEST (-X)
-    { .v = {
-        { .p = { 0.0f, 0.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
-        { .p = { 0.0f, 1.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
-        { .p = { 0.0f, 1.0f, 0.0f }, .n = { -1.0f, 0.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 0.0f, 1.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
+        { .p = { 0.0f, 1.0f, 1.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
+        { .p = { 0.0f, 1.0f, 0.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } }
     }},
-    { .v = {
-        { .p = { 0.0f, 0.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
-        { .p = { 0.0f, 1.0f, 0.0f }, .n = { -1.0f, 0.0f, 0.0f } },
-        { .p = { 0.0f, 0.0f, 0.0f }, .n = { -1.0f, 0.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 0.0f, 1.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
+        { .p = { 0.0f, 1.0f, 0.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } },
+        { .p = { 0.0f, 0.0f, 0.0f, 1.0f }, .n = { -1.0f, 0.0f, 0.0f } }
     }},
 
     // TOP (+Y)
-    { .v = {
-        { .p = { 0.0f, 1.0f, 0.0f }, .n = { 0.0f, 1.0f, 0.0f } },
-        { .p = { 0.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
+        { .p = { 0.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } }
     }},
-    { .v = {
-        { .p = { 0.0f, 1.0f, 0.0f }, .n = { 0.0f, 1.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
-        { .p = { 1.0f, 1.0f, 0.0f }, .n = { 0.0f, 1.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 0.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 1.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } },
+        { .p = { 1.0f, 1.0f, 0.0f, 1.0f }, .n = { 0.0f, 1.0f, 0.0f } }
     }},
 
     // BOTTOM (-Y)
-    { .v = {
-        { .p = { 1.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
-        { .p = { 0.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
-        { .p = { 0.0f, 0.0f, 0.0f }, .n = { 0.0f, -1.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
+        { .p = { 0.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
+        { .p = { 0.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } }
     }},
-    { .v = {
-        { .p = { 1.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
-        { .p = { 0.0f, 0.0f, 0.0f }, .n = { 0.0f, -1.0f, 0.0f } },
-        { .p = { 1.0f, 0.0f, 0.0f }, .n = { 0.0f, -1.0f, 0.0f } }
+    { .smooth = false, .v = {
+        { .p = { 1.0f, 0.0f, 1.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
+        { .p = { 0.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } },
+        { .p = { 1.0f, 0.0f, 0.0f, 1.0f }, .n = { 0.0f, -1.0f, 0.0f } }
     }}
 };
 
@@ -157,18 +137,17 @@ static inline pixel_t graphics_color_rgba_from_linear(const vec3 lin)
         255);
 }
 
-static inline void graphics_multiply_matrix_vector(mat4 matrix, vec3 src, vec3 dest)
+static inline void graphics_multiply_matrix_vector(mat4 matrix, vec4 src, vec4 dest)
 {
     vec4 tmp;
-    glm_vec4(src, 1, tmp);
-    glm_mat4_mulv(matrix, tmp, tmp);
-    if (tmp[3] != 0.0f || tmp[3] != 1.0f)
+    glm_mat4_mulv(matrix, src, tmp);
+    if (tmp[3] > GLM_FLT_EPSILON)
     {
-       tmp[0] /= tmp[3];
-       tmp[1] /= tmp[3];
-       tmp[2] /= tmp[3];
+        tmp[0] /= tmp[3];
+        tmp[1] /= tmp[3];
+        tmp[2] /= tmp[3];
     }
-    glm_vec3(tmp, dest);
+    glm_vec4_copy(tmp, dest);
 }
 
 static inline void graphics_set_projection(const Framebuffer *fb, float fNear, float fFar, float fFovDeg, mat4 out)
@@ -304,9 +283,8 @@ void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *o
 {
     graphics_object_update(obj);
 
-    mat4 view_model, mvp;
-    glm_mat4_mul(world->view, obj->model, view_model);
-    glm_mat4_mul(world->proj, view_model, mvp);
+    mat4 mvp;
+    glm_mat4_mulN((mat4 *[]) {&world->proj, &world->view, &obj->model}, 3, mvp);
 
     const size_t triangle_count = vector_triangle_size(&obj->mesh.tris);
     for (size_t i = 0; i < triangle_count; ++i)
@@ -317,7 +295,7 @@ void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *o
         for (int v = 0; v < 3; ++v)
         {
             vec4 vertex_obj = { tri->v[v].p[0], tri->v[v].p[1], tri->v[v].p[2], 1.0f };
-            vec3 vertex_world;
+            vec4 vertex_world;
             graphics_multiply_matrix_vector(obj->model, vertex_obj, vertex_world);
 
             graphics_multiply_matrix_vector(mvp, vertex_obj, tri_clip.v[v].p);
@@ -330,7 +308,7 @@ void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *o
             tri_screen.v[v].p[2] = tri_clip.v[v].p[2];
         }
 
-        // continue if triangle is behind the camera
+        // continue if triangle is behind the camera (temporary solution)
         if (tri_screen.v[0].p[2] > 1 || tri_screen.v[1].p[2] > 1 || tri_screen.v[2].p[2] > 1) continue;
 
         // continue if the triangle is facing backwards
@@ -345,11 +323,20 @@ void graphics_draw_object(Framebuffer *fb, World *world, Light *light, Object *o
         graphics_point3(tri_screen.v[1].p, &p1);
         graphics_point3(tri_screen.v[2].p, &p2);
 
-        pixel_t c0 = graphics_color_rgba_from_linear(tri->v[0].c);
-        pixel_t c1 = graphics_color_rgba_from_linear(tri->v[1].c);
-        pixel_t c2 = graphics_color_rgba_from_linear(tri->v[2].c);
+        if (tri->smooth)
+        {
+            pixel_t c0 = graphics_color_rgba_from_linear(tri->v[0].c);
+            pixel_t c1 = graphics_color_rgba_from_linear(tri->v[1].c);
+            pixel_t c2 = graphics_color_rgba_from_linear(tri->v[2].c);
 
-        framebuffer_fill_triangle_with_depth(fb, p0, p1, p2, c0, c1, c2);
+            framebuffer_fill_triangle_gouraud_with_depth(fb, p0, p1, p2, c0, c1, c2);
+        }
+        else
+        {
+            pixel_t c = graphics_color_rgba_from_linear(tri->v[0].c);
+
+            framebuffer_fill_triangle_with_depth(fb, p0, p1, p2, c);
+        }
     }
 }
 

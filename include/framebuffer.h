@@ -1,10 +1,9 @@
-#ifndef __SOFT_H__
-#define __SOFT_H__
+#ifndef __FRAMEBUFFER_H__
+#define __FRAMEBUFFER_H__
 
 #include <float.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -297,79 +296,9 @@ static inline void framebuffer_draw_triangle(Framebuffer *fb, point2_t p0, point
     framebuffer_draw_line(fb, p2, p0, color);
 }
 
-static inline void framebuffer_fill_triangle(Framebuffer *fb, point2_t p0, point2_t p1, point2_t p2, pixel_t c0, pixel_t c1, pixel_t c2)
-{
-    const int min_x = MAX(0, MIN3(p0.x, p1.x, p2.x));
-    const int max_x = MIN(fb->width - 1, MAX3(p0.x, p1.x, p2.x));
-    const int min_y = MAX(0, MIN3(p0.y, p1.y, p2.y));
-    const int max_y = MIN(fb->height - 1, MAX3(p0.y, p1.y, p2.y));
-
-    if (min_x > max_x || min_y > max_y) return;
-
-    const int dx01 = p0.x - p1.x;
-    const int dy01 = p0.y - p1.y;
-    const int dx12 = p1.x - p2.x;
-    const int dy12 = p1.y - p2.y;
-    const int dx20 = p2.x - p0.x;
-    const int dy20 = p2.y - p0.y;
-
-    const int area = dx12 * (p0.y - p2.y) - dy12 * (p0.x - p2.x);
-    if (area <= 0) return;
-
-    const float inv_area = 1.0f / (float)area;
-
-    const int r0 = (c0 >> 16) & 0xFF;
-    const int g0 = (c0 >>  8) & 0xFF;
-    const int b0 = (c0 >>  0) & 0xFF;
-    const int r1 = (c1 >> 16) & 0xFF;
-    const int g1 = (c1 >>  8) & 0xFF;
-    const int b1 = (c1 >>  0) & 0xFF;
-    const int r2 = (c2 >> 16) & 0xFF;
-    const int g2 = (c2 >>  8) & 0xFF;
-    const int b2 = (c2 >>  0) & 0xFF;
-
-    int w0_row = dx12 * (min_y - p2.y) - dy12 * (min_x - p2.x);
-    int w1_row = dx20 * (min_y - p0.y) - dy20 * (min_x - p0.x);
-    int w2_row = dx01 * (min_y - p1.y) - dy01 * (min_x - p1.x);
-
-    for (int y = min_y; y <= max_y; ++y)
-    {
-        int w0 = w0_row;
-        int w1 = w1_row;
-        int w2 = w2_row;
-
-        pixel_t *row = &fb->pixels[y * fb->width + min_x];
-
-        for (int x = min_x; x <= max_x; ++x)
-        {
-            if (w0 >= 0 && w1 >= 0 && w2 >= 0)
-            {
-                float lambda0 = (float)w0 * inv_area;
-                float lambda1 = (float)w1 * inv_area;
-                float lambda2 = (float)w2 * inv_area;
-
-                int r = (int)(lambda0 * r0 + lambda1 * r1 + lambda2 * r2);
-                int g = (int)(lambda0 * g0 + lambda1 * g1 + lambda2 * g2);
-                int b = (int)(lambda0 * b0 + lambda1 * b1 + lambda2 * b2);
-
-                *row = color_rgba(r, g, b, 255);
-            }
-
-            w0 -= dy12;
-            w1 -= dy20;
-            w2 -= dy01;
-            row++;
-        }
-
-        w0_row += dx12;
-        w1_row += dx20;
-        w2_row += dx01;
-    }
-}
-
 typedef struct { int x; int y; float z; } point3_t;
 
-static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_t p0, point3_t p1, point3_t p2, pixel_t c0, pixel_t c1, pixel_t c2)
+static inline void _fill_triangle_generic(Framebuffer *fb, point3_t p0, point3_t p1, point3_t p2, pixel_t c0, pixel_t c1, pixel_t c2, bool use_depth, bool use_gouraud)
 {
     const int min_x = MAX(0, MIN3(p0.x, p1.x, p2.x));
     const int max_x = MIN(fb->width - 1, MAX3(p0.x, p1.x, p2.x));
@@ -393,12 +322,17 @@ static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_
     const int r0 = (c0 >> 16) & 0xFF;
     const int g0 = (c0 >>  8) & 0xFF;
     const int b0 = (c0 >>  0) & 0xFF;
-    const int r1 = (c1 >> 16) & 0xFF;
-    const int g1 = (c1 >>  8) & 0xFF;
-    const int b1 = (c1 >>  0) & 0xFF;
-    const int r2 = (c2 >> 16) & 0xFF;
-    const int g2 = (c2 >>  8) & 0xFF;
-    const int b2 = (c2 >>  0) & 0xFF;
+
+    int r1, g1, b1, r2, g2, b2;
+    if (use_gouraud)
+    {
+        r1 = (c1 >> 16) & 0xFF;
+        g1 = (c1 >>  8) & 0xFF;
+        b1 = (c1 >>  0) & 0xFF;
+        r2 = (c2 >> 16) & 0xFF;
+        g2 = (c2 >>  8) & 0xFF;
+        b2 = (c2 >>  0) & 0xFF;
+    }
 
     int w0_row = dx12 * (min_y - p2.y) - dy12 * (min_x - p2.x);
     int w1_row = dx20 * (min_y - p0.y) - dy20 * (min_x - p0.x);
@@ -411,7 +345,7 @@ static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_
         int w2 = w2_row;
 
         pixel_t *pixel_row = &fb->pixels[y * fb->width + min_x];
-        float *depth_row = &fb->depth[y * fb->width + min_x];
+        float *depth_row = use_depth ? &fb->depth[y * fb->width + min_x] : NULL;
 
         for (int x = min_x; x <= max_x; ++x)
         {
@@ -421,16 +355,30 @@ static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_
                 float lambda1 = (float)w1 * inv_area;
                 float lambda2 = (float)w2 * inv_area;
 
-                float z = lambda0 * p0.z + lambda1 * p1.z + lambda2 * p2.z;
-
-                if (z < *depth_row - 1e-5f)
+                bool draw = true;
+                if (use_depth)
                 {
-                    *depth_row = z;
+                    float z = lambda0 * p0.z + lambda1 * p1.z + lambda2 * p2.z;
+                    draw = (z < *depth_row - 1e-5f);
+                    if (draw)
+                        *depth_row = z;
+                }
 
-                    int r = (int)(lambda0 * r0 + lambda1 * r1 + lambda2 * r2);
-                    int g = (int)(lambda0 * g0 + lambda1 * g1 + lambda2 * g2);
-                    int b = (int)(lambda0 * b0 + lambda1 * b1 + lambda2 * b2);
-
+                if (draw)
+                {
+                    int r, g, b;
+                    if (use_gouraud)
+                    {
+                        r = (int)(lambda0 * r0 + lambda1 * r1 + lambda2 * r2);
+                        g = (int)(lambda0 * g0 + lambda1 * g1 + lambda2 * g2);
+                        b = (int)(lambda0 * b0 + lambda1 * b1 + lambda2 * b2);
+                    }
+                    else
+                    {
+                        r = r0;
+                        g = g0;
+                        b = b0;
+                    }
                     *pixel_row = color_rgba(r, g, b, 255);
                 }
             }
@@ -439,13 +387,39 @@ static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_
             w1 -= dy20;
             w2 -= dy01;
             pixel_row++;
-            depth_row++;
+            if (use_depth) depth_row++;
         }
 
         w0_row += dx12;
         w1_row += dx20;
         w2_row += dx01;
     }
+}
+
+static inline void framebuffer_fill_triangle(Framebuffer *fb, point2_t p0, point2_t p1, point2_t p2, pixel_t c)
+{
+    point3_t p0_3d = {p0.x, p0.y, 0};
+    point3_t p1_3d = {p1.x, p1.y, 0};
+    point3_t p2_3d = {p2.x, p2.y, 0};
+    _fill_triangle_generic(fb, p0_3d, p1_3d, p2_3d, c, c, c, false, false);
+}
+
+static inline void framebuffer_fill_triangle_gouraud(Framebuffer *fb, point2_t p0, point2_t p1, point2_t p2, pixel_t c0, pixel_t c1, pixel_t c2)
+{
+    point3_t p0_3d = {p0.x, p0.y, 0};
+    point3_t p1_3d = {p1.x, p1.y, 0};
+    point3_t p2_3d = {p2.x, p2.y, 0};
+    _fill_triangle_generic(fb, p0_3d, p1_3d, p2_3d, c0, c1, c2, false, true);
+}
+
+static inline void framebuffer_fill_triangle_with_depth(Framebuffer *fb, point3_t p0, point3_t p1, point3_t p2, pixel_t c)
+{
+    _fill_triangle_generic(fb, p0, p1, p2, c, c, c, true, false);
+}
+
+static inline void framebuffer_fill_triangle_gouraud_with_depth(Framebuffer *fb, point3_t p0, point3_t p1, point3_t p2, pixel_t c0, pixel_t c1, pixel_t c2)
+{
+    _fill_triangle_generic(fb, p0, p1, p2, c0, c1, c2, true, true);
 }
 
 static inline void framebuffer_set_font(Framebuffer *fb, uint8_t *font_bmp)
@@ -522,4 +496,4 @@ static inline void framebuffer_printf(Framebuffer *fb, point2_t p, pixel_t color
 }
 
 
-#endif //__SOFT_H__
+#endif //__FRAMEBUFFER_H__

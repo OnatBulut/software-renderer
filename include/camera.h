@@ -113,4 +113,5 @@ static inline void camera_roll(Camera *cam, float angle_rad)
     cam->dirty = true;
 }
 
+
 #endif //__CAMERA_H__
