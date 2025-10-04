@@ -5,7 +5,7 @@ all: configure build
 
 .PHONY: configure
 configure:
-	@echo "🔧 Configuring the project..."
+	@echo "Configuring the project..."
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && \
 	  cmake -DCMAKE_BUILD_TYPE=Release \
@@ -14,12 +14,12 @@ configure:
 
 .PHONY: build
 build: configure
-	@echo "🚧 Building the project..."
+	@echo "Building the project..."
 	@cmake --build $(BUILD_DIR)
 
 .PHONY: clean
 clean:
-	@echo "🧹 Cleaning build..."
+	@echo "Cleaning build..."
 	@rm -rf $(BUILD_DIR)
 
 .PHONY: rebuild
