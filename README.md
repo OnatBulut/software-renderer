@@ -1,3 +1,13 @@
+# Repository Moved
+
+**This repository has been archived and is no longer maintained here.**
+
+The project has moved to Codeberg. Please check there for the latest updates, issues, and releases:
+
+**[https://codeberg.org/onatbulut/software-renderer](https://codeberg.org/onatbulut/software-renderer)**
+
+---
+
 <p align="center">
    <img alt="" src="window.png" />
 </p>
@@ -33,7 +43,7 @@ $ make
 $ build/software-renderer resources/test.obj
 ```
 \
-Note: May compile on Windows but untested. Needs to be done manually. Will test it soon.
+Note: May compile on Windows but untested. Needs to be done manually. May test it some day.
 
 ## Dependencies
 [SDL3](https://github.com/libsdl-org/SDL) - needs to be manually installed on your system\
